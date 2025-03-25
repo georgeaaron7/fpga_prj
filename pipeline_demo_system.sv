@@ -9,6 +9,16 @@ module pipeline_demo_system (
     output logic ready_led,        // LED indicating system is ready
     output logic [2:0] vector_leds // LEDs to display selected test vector (binary)
 );
+    // ADD THIS LINE: Slow clock signal for visible operation
+    logic slow_clk;
+    
+    // ADD THIS BLOCK: Instantiate your existing clock divider
+    // Note: Adjust the port names if your clock_divider has different interface
+    converter clk_divider (
+        .bigClk(clk),
+        .reset(rst_n),
+        .smallClk(slow_clk)
+    );
 
     // Internal signals
     logic [15:0] eeg_data [177:0];    // Current test vector
@@ -85,7 +95,7 @@ module pipeline_demo_system (
     end
     
     // Pipelined output registers
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge slow_clk or negedge rst_n) begin
         if (!rst_n) begin
             seizure_led_reg <= 0;
             non_seizure_led_reg <= 0;
@@ -116,7 +126,7 @@ module pipeline_demo_system (
         .FEATURE_COUNT(178),
         .DETECTION_THRESHOLD(16'h0080)  // 0.5 in Q8.8 format
     ) detector (
-        .clk(clk),
+        .clk(slow_clk),  // CHANGED FROM clk TO slow_clk
         .rst_n(rst_n),
         .data_valid(data_valid),
         .eeg_data(eeg_data),
